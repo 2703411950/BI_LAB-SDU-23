@@ -2,12 +2,12 @@ import sys
 import time
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from load_data import MyDataset
 from model import MyModel
 import numpy as np
+from sklearn.metrics import roc_auc_score, precision_recall_curve, auc, f1_score, accuracy_score, recall_score
 import ipdb
 
 
@@ -47,14 +47,13 @@ class Trainer:
                     y = y.cuda()
 
                 outputs = self.model(x1, x2)
-
                 loss = self.criterion(outputs, y)
                 loss.backward()
-
                 self.optimizer.step()
+
                 batch_end = time.time()
 
-                if batch_id % 10:
+                if batch_id % 10 == 0:
                     log_str = f"EPOCH: {epoch+1}/{self.EPOCH} | batch: {batch_id+1}/{len(self.train_loader)} " \
                               f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
                     sys.stdout.write(log_str)
@@ -91,15 +90,15 @@ class Tester:
                 outputs = self.model(x1, x2)
                 # ipdb.set_trace()
 
-                _, prediction = torch.max(F.softmax(outputs, dim=1), 1)
-                # prediction = torch.max(outputs.data, 1)
+                prediction = torch.max(outputs, dim=1)[1]
+                y_score = outputs[:, 1]
                 pred_y = prediction.data.numpy().squeeze()
                 target_y = y.data.numpy()
-                accuracy_total, accuracy_1 = compute_acc(pred_y, target_y, self.batch_size)
+                acc, recall, auc_score, aupr, f1 = compute_metrics(pred_y, target_y, y_score, self.batch_size)
 
                 # print test log
-                log_str = f"test: batch: {batch_idx+1}/{len(self.test_loader)} | accuracy: {accuracy_total} | " \
-                          f"accuracy_1: {accuracy_1}\n"
+                log_str = f"test: batch: {batch_idx+1}/{len(self.test_loader)} | acc: {acc} | " \
+                          f"recall: {recall} | auc: {auc_score} | f1: {f1}\n"
                 sys.stdout.write(log_str)
                 write_log(self.result_path+"test_record.txt", log_str)
 
@@ -109,15 +108,29 @@ class Tester:
         print("Accuracy of the trained network over test set is {:.3f}%".format(correct / total * 100))
 
 
-def compute_acc(pred, target, count):
+def compute_metrics(pred, target, y_score, count):
     """
     compute total accuracy and the accuracy to predict 1
     """
     indices_1 = np.where(target == 1)
     pred_1 = pred[indices_1]
-    accuracy_1 = sum(pred_1) / len(indices_1[0])
-    accuracy_total = sum(pred == target) / count
-    return accuracy_total, accuracy_1
+    # precision = sum(pred_1) / len(indices_1[0])
+    # accuracy_total = sum(pred == target) / count
+    accuracy = accuracy_score(target, pred)
+
+    # 计算AUROC
+    auc_score = roc_auc_score(target, pred)
+
+    # 计算AUPR
+    precision, recall, _ = precision_recall_curve(target, y_score)
+    aupr = auc(recall, precision)
+
+    # 计算f1-score
+    f1 = f1_score(target, pred, average='macro')
+
+    recall = recall_score(target, pred)
+
+    return accuracy, recall, auc_score, aupr, f1
 
 
 def write_log(filename, string):

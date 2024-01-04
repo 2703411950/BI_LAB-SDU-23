@@ -44,11 +44,32 @@ def show_ppi_matrix(data):
 
 
 def transform_ppi_matrix():
+    """
+    根据互作矩阵，获得蛋白质之间的两两关系
+    并且按照所给的正负样本比例划分
+    return: numpy数组 [[id1, id2, relationship], ...]
+    """
     data = np.load('dataset/PPI_500_500.npy')
-    res = []
-    for row in range(len(data)):
-        for col in range(row + 1, len(data[0])):
-            res.append([row, col, data[row, col]])
+    rows, cols = np.triu_indices(len(data), k=1)  # 获取上三角部分的索引
+    ppi_list = np.column_stack((rows, cols, data[rows, cols]))
+
+    # 分出正负样本的总数据集
+    pos_ids = ppi_list[:, 2] == 1
+    neg_ids = ppi_list[:, 2] == 0
+
+    pos_data = ppi_list[pos_ids]
+    neg_data = ppi_list[neg_ids]
+
+    # 计算大小
+    sample_size = min(len(pos_data), len(neg_data))
+    # 分别从正负样本的集合中随机抽样
+    pos_samples = np.random.choice(len(pos_data), size=sample_size, replace=False)
+    neg_samples = np.random.choice(len(neg_data), size=sample_size, replace=False)
+
+    # 根据抽样的结果取数据
+    pos_data = pos_data[pos_samples]
+    neg_data = neg_data[neg_samples]
+    res = np.concatenate((neg_data, pos_data), axis=0)
     return res
 
 
