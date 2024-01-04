@@ -1,0 +1,135 @@
+import sys
+import time
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from load_data import MyDataset
+from model import MyModel
+import numpy as np
+import ipdb
+
+
+class Trainer:
+    def __init__(self, model, data, decay=4, lr=1e-2, lr_decay_rate=0.5, BATCH_SIZE=256, with_test_flag=False,
+                 test_data=None, result_path="result/method1/"):
+        self.model = model
+        self.decay = decay
+        self.lr = lr
+        self.lr_decay_rate = lr_decay_rate
+        self.batch_size = BATCH_SIZE
+        self.EPOCH = self.decay * 4 + 1
+        self.data = data
+        self.result_path = result_path
+        self.train_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
+        self.device = ['gpu' if torch.cuda.is_available() else 'cpu']
+        if self.device == 'gpu':
+            self.criterion.cuda()
+            self.model.to(self.device)
+
+        self.with_test_flag = with_test_flag
+        if self.with_test_flag:
+            self.tester = Tester(self.model, test_data)
+
+    def train(self):
+        self.model.train()
+        for epoch in range(self.EPOCH):
+            for batch_id, input_data in enumerate(self.train_loader):
+                batch_start = time.time()
+                self.optimizer.zero_grad()
+                x1, x2, y = input_data
+                if self.device == 'gpu':
+                    x1 = x1.cuda()
+                    x2 = x2.cuda()
+                    y = y.cuda()
+
+                outputs = self.model(x1, x2)
+
+                loss = self.criterion(outputs, y)
+                loss.backward()
+
+                self.optimizer.step()
+                batch_end = time.time()
+
+                if batch_id % 10:
+                    log_str = f"EPOCH: {epoch+1}/{self.EPOCH} | batch: {batch_id+1}/{len(self.train_loader)} " \
+                              f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
+                    sys.stdout.write(log_str)
+                    write_log(self.result_path+"train_record.txt", log_str)
+
+            if self.with_test_flag:
+                self.tester.test()
+
+
+class Tester:
+    def __init__(self, model, data, log_interval=10, BATCH_SIZE=256, result_path="result/method1/"):
+        self.model = model
+        self.data = data
+        self.log_interval = log_interval
+        self.batch_size = BATCH_SIZE
+        self.test_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        self.result_path = result_path
+        self.device = ['gpu' if torch.cuda.is_available() else 'cpu']
+        if self.device == 'gpu':
+            self.model.to(self.device)
+
+    def test(self):
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for batch_idx, input_data in enumerate(self.test_loader):
+                x1, x2, y = input_data
+                if self.device == 'gpu':
+                    x1 = x1.cuda()
+                    x2 = x2.cuda()
+                    y = y.cuda()
+
+                outputs = self.model(x1, x2)
+                # ipdb.set_trace()
+
+                _, prediction = torch.max(F.softmax(outputs, dim=1), 1)
+                # prediction = torch.max(outputs.data, 1)
+                pred_y = prediction.data.numpy().squeeze()
+                target_y = y.data.numpy()
+                accuracy_total, accuracy_1 = compute_acc(pred_y, target_y, self.batch_size)
+
+                # print test log
+                log_str = f"test: batch: {batch_idx+1}/{len(self.test_loader)} | accuracy: {accuracy_total} | " \
+                          f"accuracy_1: {accuracy_1}\n"
+                sys.stdout.write(log_str)
+                write_log(self.result_path+"test_record.txt", log_str)
+
+                # record the total accuracy
+                total += y.size(0)
+                correct += (pred_y == target_y).sum().item()
+        print("Accuracy of the trained network over test set is {:.3f}%".format(correct / total * 100))
+
+
+def compute_acc(pred, target, count):
+    """
+    compute total accuracy and the accuracy to predict 1
+    """
+    indices_1 = np.where(target == 1)
+    pred_1 = pred[indices_1]
+    accuracy_1 = sum(pred_1) / len(indices_1[0])
+    accuracy_total = sum(pred == target) / count
+    return accuracy_total, accuracy_1
+
+
+def write_log(filename, string):
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(string)
+
+
+if __name__ == '__main__':
+    my_dataset = MyDataset()
+    train_size = int(len(my_dataset) * 0.7)
+    test_size = len(my_dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(my_dataset, [train_size, test_size])
+
+    my_train = Trainer(MyModel(), train_dataset, with_test_flag=True, test_data=test_dataset)
+    my_train.train()
