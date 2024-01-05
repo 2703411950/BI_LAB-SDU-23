@@ -74,16 +74,24 @@ def transform_ppi_matrix():
     return res
 
 
+def norm_data():
+    seq_data = np.load("dataset/sequence_feature_500_256.npy")
+    seq_data = normalize_rows(seq_data)
+    np.save("dataset/norm_sequence_feature_500_256.npy", seq_data)
+
+    expression_data = np.load('dataset/RNAseq_feature_500_1089.npy')
+    expression_data = normalize_rows(expression_data)
+    np.save("dataset/norm_RNAseq_feature_500_1089.npy", expression_data)
+
+
 def get_dataset():
     ppi_list = transform_ppi_matrix()
-    # expression_data = np.load('dataset/RNAseq_feature_500_1089.npy')
-    # expression_data = normalize_rows(expression_data)
-    # np.save("dataset/norm_RNAseq_feature_500_1089.npy", expression_data)
     expression_data = np.load('dataset/norm_RNAseq_feature_500_1089.npy')
+    seq_data = np.load("dataset/norm_sequence_feature_500_256.npy")
     X = []
     y = []
     for i in ppi_list:
-        X.append([expression_data[i[0]], expression_data[i[1]]])
+        X.append([seq_data[i[0]], seq_data[i[1]]])
         y.append(i[2])
     return X, y
 
@@ -105,7 +113,7 @@ if __name__ == '__main__':
     # print(a[0,:])
     # print(a[0,:].shape)
     # print(a[0].max(axis=1))
-    # get_dataset()
+    get_dataset()
     a = np.load("dataset/norm_RNAseq_feature_500_1089.npy")
     print(a.max(axis=1, keepdims=True))
     print(a.min(axis=1, keepdims=True))
