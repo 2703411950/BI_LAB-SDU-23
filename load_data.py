@@ -5,6 +5,7 @@ import pandas as pd
 import networkx as nx
 import torch
 from torch.utils.data import DataLoader
+from tools import normalize_rows
 
 
 def plot_data_distribution(data, n_pic):
@@ -75,7 +76,10 @@ def transform_ppi_matrix():
 
 def get_dataset():
     ppi_list = transform_ppi_matrix()
-    expression_data = np.load('dataset/RNAseq_feature_500_1089.npy')
+    # expression_data = np.load('dataset/RNAseq_feature_500_1089.npy')
+    # expression_data = normalize_rows(expression_data)
+    # np.save("dataset/norm_RNAseq_feature_500_1089.npy", expression_data)
+    expression_data = np.load('dataset/norm_RNAseq_feature_500_1089.npy')
     X = []
     y = []
     for i in ppi_list:
@@ -97,4 +101,12 @@ class MyDataset(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
-    pass
+    # a = np.load("dataset/RNAseq_feature_500_1089.npy")
+    # print(a[0,:])
+    # print(a[0,:].shape)
+    # print(a[0].max(axis=1))
+    # get_dataset()
+    a = np.load("dataset/norm_RNAseq_feature_500_1089.npy")
+    print(a.max(axis=1, keepdims=True))
+    print(a.min(axis=1, keepdims=True))
+

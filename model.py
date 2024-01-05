@@ -16,14 +16,6 @@ class MyModel(nn.Module):
             nn.Linear(n_hidden2, n_outputs),
             nn.Softmax(dim=1)
         )
-        # self.fc1 = nn.Sequential(
-        #     nn.Linear(2 * n_inputs, n_hidden1),
-        #     nn.Sigmoid(),
-        #     nn.Linear(n_hidden1, n_hidden2),
-        #     nn.Sigmoid(),
-        #     nn.Linear(n_hidden2, n_outputs),
-        #     nn.Softmax(dim=1)
-        # )
 
     def forward(self, x1, x2):
         x = torch.cat((x1, x2), dim=1)
