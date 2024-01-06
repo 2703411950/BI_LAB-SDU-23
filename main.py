@@ -1,7 +1,7 @@
 from load_data import MyDataset
 from model import MyModel
 import torch
-from tools import Trainer
+from tools.training_tools import Trainer
 
 
 if __name__ == '__main__':

@@ -5,7 +5,8 @@ import pandas as pd
 import networkx as nx
 import torch
 from torch.utils.data import DataLoader
-from tools import normalize_rows
+from tools.training_tools import normalize_rows
+from sklearn.decomposition import PCA
 
 
 def plot_data_distribution(data, n_pic):
@@ -74,6 +75,16 @@ def transform_ppi_matrix():
     return res
 
 
+def get_dense():
+    miRNA_data = np.load("dataset/miRNA_feature_500_1602.npy")
+    n_components = 500
+    pca = PCA(n_components)
+    dense_feat = pca.fit_transform(miRNA_data)
+    dense_feat = np.array(dense_feat)
+    np.save("dataset/dense_miRNA.npy", dense_feat)
+    return dense_feat
+
+
 def norm_data():
     seq_data = np.load("dataset/sequence_feature_500_256.npy")
     seq_data = normalize_rows(seq_data)
@@ -109,12 +120,5 @@ class MyDataset(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
-    # a = np.load("dataset/RNAseq_feature_500_1089.npy")
-    # print(a[0,:])
-    # print(a[0,:].shape)
-    # print(a[0].max(axis=1))
-    get_dataset()
-    a = np.load("dataset/norm_RNAseq_feature_500_1089.npy")
-    print(a.max(axis=1, keepdims=True))
-    print(a.min(axis=1, keepdims=True))
-
+    exp_data = np.load("dataset/RNAseq_feature_500_1089.npy")
+    plot_data_distribution(exp_data, 6)
