@@ -11,7 +11,7 @@ import ipdb
 
 class Trainer:
     def __init__(self, model, data, decay=5, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
-                 test_data=None, result_path="result/baseline/"):
+                 test_data=None, result_path="result/GAT/"):
         self.model = model
         self.decay = decay
         self.lr = lr
@@ -73,7 +73,7 @@ class Trainer:
 
 
 class Tester:
-    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/baseline/"):
+    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/GAT/"):
         self.model = model
         self.data = data
         self.log_interval = log_interval
@@ -155,3 +155,15 @@ def normalize_rows(arr):
     normalized_arr = (arr - min_values[:, np.newaxis]) / range_values[:, np.newaxis]
 
     return normalized_arr
+
+
+def get_edge_index(adj_matrix):
+    """
+    根据邻接矩阵，构建PYG需要的edge_index
+    """
+    adj_matrix = np.array(adj_matrix)
+    row, col = np.nonzero(adj_matrix)
+    edge_index = np.vstack((row, col))
+    edge_index = torch.tensor(edge_index, dtype=torch.long)
+
+    return edge_index

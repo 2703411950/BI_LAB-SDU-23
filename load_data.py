@@ -97,15 +97,11 @@ def norm_data():
 
 def get_dataset():
     ppi_list = transform_ppi_matrix()
-    expression_data = np.load('dataset/norm_RNAseq_feature_500_1089.npy')
-    seq_data = np.load("dataset/norm_sequence_feature_500_256.npy")
-    miRNA_data = np.load("dataset/dense_miRNA.npy")
-    # feature dim = 1089+256+500 = 1845
-    concatenated = np.concatenate((expression_data, seq_data, miRNA_data), axis=1)
+    data = np.load("dataset/multiview/multiview_embedding_200.npy")
     X = []
     y = []
     for i in ppi_list:
-        X.append([concatenated[i[0]], concatenated[i[1]]])
+        X.append([data[i[0]], data[i[1]]])
         y.append(i[2])
     return X, y
 
@@ -120,6 +116,21 @@ class MyDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.y)
+
+
+class ProductData(torch.utils.data.Dataset):
+    def __init__(self):
+        super(ProductData, self).__init__()
+        self.pairs = np.array(transform_ppi_matrix())
+        self.x1_index = self.pairs[:, 0]
+        self.x2_index = self.pairs[:, 1]
+        self.y = torch.from_numpy(self.pairs[:, 2])
+
+    def __getitem__(self, index):
+        return self.x1_index[index], self.x2_index[index], self.y[index]
+
+    def __len__(self):
+        return len(self.pairs)
 
 
 if __name__ == '__main__':
