@@ -21,8 +21,11 @@ class Trainer:
         self.data = data
         self.result_path = result_path
         self.train_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr)
+
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
+        self.criterion = nn.CrossEntropyLoss().to(self.device)
 
         self.with_test_flag = with_test_flag
         if self.with_test_flag:
@@ -37,28 +40,27 @@ class Trainer:
                 self.optimizer.zero_grad()
                 x1, x2, y = input_data
 
+                x1 = x1.to(self.device)
+                x2 = x2.to(self.device)
+                y = y.to(self.device)
+
                 outputs = self.model(x1, x2)
                 loss = self.criterion(outputs, y)
                 loss.backward()
 
+                # 检查梯度能不能成功回传
                 # for name, weight in self.model.named_parameters():
                 #     if weight.requires_grad:
                 #         print(f"{name}:", weight.grad.mean(), weight.grad.min(), weight.grad.max())
 
                 self.optimizer.step()
 
-                batch_end = time.time()
-
                 if batch_id % 10 == 0:
+                    batch_end = time.time()
                     log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | lr: {self.lr} | batch: {batch_id + 1}/{len(self.train_loader)} " \
                               f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
                     sys.stdout.write(log_str)
                     write_log(self.result_path + "train_record.txt", log_str)
-
-                # log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | batch: {batch_id + 1}/{len(self.train_loader)} " \
-                #           f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
-                # sys.stdout.write(log_str)
-                # write_log(self.result_path + "train_record.txt", log_str)
 
             if self.with_test_flag:
                 self.tester.test()
@@ -80,6 +82,8 @@ class Tester:
         self.batch_size = BATCH_SIZE
         self.test_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
         self.result_path = result_path
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
 
     def test(self):
         correct = 0
@@ -89,13 +93,17 @@ class Tester:
             for batch_idx, input_data in enumerate(self.test_loader):
                 x1, x2, y = input_data
 
+                x1 = x1.to(self.device)
+                x2 = x2.to(self.device)
+                y = y.to(self.device)
+
                 outputs = self.model(x1, x2)
                 # ipdb.set_trace()
 
                 prediction = torch.max(outputs, dim=1)[1]
-                y_score = outputs[:, 1]
-                pred_y = prediction.data.numpy().squeeze()
-                target_y = y.data.numpy()
+                y_score = outputs[:, 1].cpu()
+                pred_y = prediction.data.cpu().numpy().squeeze()
+                target_y = y.data.cpu().numpy()
                 acc, recall, auc_score, aupr, f1 = compute_metrics(pred_y, target_y, y_score)
 
                 # print test log
