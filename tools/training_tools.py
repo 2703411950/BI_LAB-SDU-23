@@ -2,6 +2,7 @@ import sys
 import time
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import numpy as np
@@ -10,14 +11,14 @@ import ipdb
 
 
 class Trainer:
-    def __init__(self, model, data, decay=5, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
+    def __init__(self, model, data, decay=10, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
                  test_data=None, result_path="result/GAT/"):
         self.model = model
         self.decay = decay
         self.lr = lr
         self.lr_decay_rate = lr_decay_rate
         self.batch_size = BATCH_SIZE
-        self.EPOCH = self.decay * 4 + 1
+        self.EPOCH = self.decay * 10 + 1
         self.data = data
         self.result_path = result_path
         self.train_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
@@ -60,7 +61,7 @@ class Trainer:
                     log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | lr: {self.lr} | batch: {batch_id + 1}/{len(self.train_loader)} " \
                               f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
                     sys.stdout.write(log_str)
-                    write_log(self.result_path + "train_record.txt", log_str)
+                    write_log(self.result_path + f"train_record.txt", log_str)
 
             if self.with_test_flag:
                 self.tester.test()
