@@ -10,8 +10,8 @@ import ipdb
 
 
 class Trainer:
-    def __init__(self, model, data, decay=4, lr=1e-2, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
-                 test_data=None, result_path="result/method1/"):
+    def __init__(self, model, data, decay=5, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
+                 test_data=None, result_path="result/baseline/"):
         self.model = model
         self.decay = decay
         self.lr = lr
@@ -31,6 +31,7 @@ class Trainer:
     def train(self):
         self.model.train()
         for epoch in range(self.EPOCH):
+            self.lr_scheduler(self.optimizer, epoch)
             for batch_id, input_data in enumerate(self.train_loader):
                 batch_start = time.time()
                 self.optimizer.zero_grad()
@@ -49,7 +50,7 @@ class Trainer:
                 batch_end = time.time()
 
                 if batch_id % 10 == 0:
-                    log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | batch: {batch_id + 1}/{len(self.train_loader)} " \
+                    log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | lr: {self.lr} | batch: {batch_id + 1}/{len(self.train_loader)} " \
                               f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
                     sys.stdout.write(log_str)
                     write_log(self.result_path + "train_record.txt", log_str)
@@ -62,9 +63,17 @@ class Trainer:
             if self.with_test_flag:
                 self.tester.test()
 
+    def lr_scheduler(self, optimizer, epoch):
+        if epoch % self.decay or epoch == 0:
+            return
+        # 学习率衰减
+        self.lr = self.lr * self.lr_decay_rate
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = self.lr
+
 
 class Tester:
-    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/method1/"):
+    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/baseline/"):
         self.model = model
         self.data = data
         self.log_interval = log_interval

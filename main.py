@@ -6,7 +6,7 @@ from tools.training_tools import Trainer
 
 if __name__ == '__main__':
     my_dataset = MyDataset()
-    train_size = int(len(my_dataset) * 0.7)
+    train_size = int(len(my_dataset) * 0.8)
     test_size = len(my_dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(my_dataset, [train_size, test_size])
 

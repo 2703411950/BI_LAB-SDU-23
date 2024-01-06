@@ -3,12 +3,12 @@ import torch.nn as nn
 
 
 class MyModel(nn.Module):
-    def __init__(self, dropout=0.3, n_inputs=256, n_outputs=2):
+    def __init__(self, dropout=0.3, n_inputs=1845, n_outputs=2):
         super(MyModel, self).__init__()
-        self.linear1 = nn.Linear(n_inputs, 200)
-        self.linear2 = nn.Linear(n_inputs, 200)
+        self.linear1 = nn.Linear(n_inputs, 250)
+        self.linear2 = nn.Linear(n_inputs, 250)
         self.fc1 = nn.Sequential(
-            nn.Linear(400, 1000),
+            nn.Linear(500, 1000),
             nn.ReLU(),
             # nn.Dropout(dropout),
             nn.BatchNorm1d(1000),

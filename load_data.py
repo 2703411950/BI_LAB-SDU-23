@@ -99,10 +99,13 @@ def get_dataset():
     ppi_list = transform_ppi_matrix()
     expression_data = np.load('dataset/norm_RNAseq_feature_500_1089.npy')
     seq_data = np.load("dataset/norm_sequence_feature_500_256.npy")
+    miRNA_data = np.load("dataset/dense_miRNA.npy")
+    # feature dim = 1089+256+500 = 1845
+    concatenated = np.concatenate((expression_data, seq_data, miRNA_data), axis=1)
     X = []
     y = []
     for i in ppi_list:
-        X.append([seq_data[i[0]], seq_data[i[1]]])
+        X.append([concatenated[i[0]], concatenated[i[1]]])
         y.append(i[2])
     return X, y
 
