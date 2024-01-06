@@ -134,5 +134,6 @@ class ProductData(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
-    exp_data = np.load("dataset/RNAseq_feature_500_1089.npy")
-    plot_data_distribution(exp_data, 6)
+    # norm_data()
+    a = np.load("dataset/norm_RNAseq_feature_500_1089.npy").round(4)
+    print(a)
