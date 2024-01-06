@@ -11,7 +11,7 @@ import ipdb
 
 class Trainer:
     def __init__(self, model, data, decay=5, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
-                 test_data=None, result_path="result/baseline/"):
+                 test_data=None, result_path="result/MultiView_NMF/"):
         self.model = model
         self.decay = decay
         self.lr = lr
@@ -73,7 +73,7 @@ class Trainer:
 
 
 class Tester:
-    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/baseline/"):
+    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/MultiView_NMF/"):
         self.model = model
         self.data = data
         self.log_interval = log_interval
