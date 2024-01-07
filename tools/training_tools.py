@@ -109,7 +109,7 @@ class Tester:
 
                 # print test log
                 log_str = f"test: batch: {batch_idx + 1}/{len(self.test_loader)} | acc: {acc} | " \
-                          f"recall: {recall} | auc: {auc_score} | f1: {f1}\n"
+                          f"recall: {recall} | auc: {auc_score} | aupr: {aupr}| f1: {f1}\n"
                 sys.stdout.write(log_str)
                 write_log(self.result_path + "test_record.txt", log_str)
 
