@@ -72,7 +72,7 @@ def transform_ppi_matrix():
     pos_data = pos_data[pos_samples]
     neg_data = neg_data[neg_samples]
     res = np.concatenate((neg_data, pos_data), axis=0)
-    return res
+    return ppi_list
 
 
 def get_dense():
@@ -134,5 +134,6 @@ class ProductData(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
-    exp_data = np.load("dataset/RNAseq_feature_500_1089.npy")
-    plot_data_distribution(exp_data, 6)
+    # norm_data()
+    a = np.load("dataset/norm_RNAseq_feature_500_1089.npy").round(4)
+    print(a)

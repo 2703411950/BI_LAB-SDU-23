@@ -2,6 +2,7 @@ import sys
 import time
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import numpy as np
@@ -10,14 +11,14 @@ import ipdb
 
 
 class Trainer:
-    def __init__(self, model, data, decay=5, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
-                 test_data=None, result_path="result/GAT/"):
+    def __init__(self, model, data, decay=10, lr=0.1, lr_decay_rate=0.5, BATCH_SIZE=128, with_test_flag=False,
+                 test_data=None, result_path="result/test/"):
         self.model = model
         self.decay = decay
         self.lr = lr
         self.lr_decay_rate = lr_decay_rate
         self.batch_size = BATCH_SIZE
-        self.EPOCH = self.decay * 4 + 1
+        self.EPOCH = self.decay * 10 + 1
         self.data = data
         self.result_path = result_path
         self.train_loader = DataLoader(self.data, batch_size=self.batch_size, shuffle=True, drop_last=True)
@@ -60,10 +61,23 @@ class Trainer:
                     log_str = f"EPOCH: {epoch + 1}/{self.EPOCH} | lr: {self.lr} | batch: {batch_id + 1}/{len(self.train_loader)} " \
                               f"| loss: {loss} | time: {round((batch_end - batch_start), 4)}\n"
                     sys.stdout.write(log_str)
-                    write_log(self.result_path + "train_record.txt", log_str)
+                    write_log(self.result_path + f"train_record.txt", log_str)
 
             if self.with_test_flag:
                 self.tester.test()
+
+            if epoch == 100:
+                pred_mat = np.zeros((500, 500))
+                data = np.load('dataset/PPI_500_500.npy')
+                rows, cols = np.triu_indices(len(data), k=1)  # 获取上三角部分的索引
+                ppi_list = np.column_stack((rows, cols, data[rows, cols]))
+                all_x1 = ppi_list[:, 0]
+                all_x2 = ppi_list[:, 1]
+                outputs = self.model(all_x1, all_x2)
+                for i in range(len(ppi_list)):
+                    pred_mat[all_x1[i], all_x2[i]] = outputs[i, 1]
+                np.save("pred_mat.npy", pred_mat)
+                np.savetxt("pred_mat.txt", pred_mat, comments=" ")
 
     def lr_scheduler(self, optimizer, epoch):
         if epoch % self.decay or epoch == 0:
@@ -75,7 +89,7 @@ class Trainer:
 
 
 class Tester:
-    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/GAT/"):
+    def __init__(self, model, data, log_interval=10, BATCH_SIZE=128, result_path="result/test/"):
         self.model = model
         self.data = data
         self.log_interval = log_interval
@@ -108,7 +122,7 @@ class Tester:
 
                 # print test log
                 log_str = f"test: batch: {batch_idx + 1}/{len(self.test_loader)} | acc: {acc} | " \
-                          f"recall: {recall} | auc: {auc_score} | f1: {f1}\n"
+                          f"recall: {recall} | auc: {auc_score} | aupr: {aupr}| f1: {f1}\n"
                 sys.stdout.write(log_str)
                 write_log(self.result_path + "test_record.txt", log_str)
 
