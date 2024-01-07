@@ -72,7 +72,7 @@ def transform_ppi_matrix():
     pos_data = pos_data[pos_samples]
     neg_data = neg_data[neg_samples]
     res = np.concatenate((neg_data, pos_data), axis=0)
-    return res
+    return ppi_list
 
 
 def get_dense():
